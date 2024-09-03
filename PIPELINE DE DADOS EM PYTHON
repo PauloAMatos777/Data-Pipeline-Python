@@ -1,0 +1,134 @@
+# PIPELINE DE DADOS EM PYTHON 
+# DEV BY: PAULO R. 
+
+#Importando Bibliotecas
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+import warnings
+warnings.filterwarnings('ignore')
+
+#ler dados
+Base_Dados = pd.read_csv('unicorns till sep 2022.csv')
+
+#verificando dimensão
+Base_Dados.shape
+
+#Verificar primeiros registros
+Base_Dados.head()
+
+#Disposição de colunas
+Base_Dados.columns
+
+#Renomeando colunas
+Base_Dados.rename(columns={'Company' : 'Empresa',
+                           'Valuation ($B)' : 'Valor($)',
+                           'Date Joined' : 'Data de Adesão',
+                           'Country' : 'Pais',
+                           'City' : 'Cidade',
+                           'Industry' : 'Setor',
+                           'Investors' : 'Investidores',
+                           }, inplace=True )
+
+#verificar tipo informação
+Base_Dados.info()
+
+#Verificando pontos nulos
+Base_Dados.isnull().sum()
+
+#Tela Gráfica
+plt.figure(figsize=(15,6))
+plt.title('Analisando Campos Nulos')
+sns.heatmap( Base_Dados.isnull(), cbar=False );
+
+#Campos unicos
+Base_Dados.nunique()
+
+#Valores unicos
+Base_Dados['Setor'].unique()
+
+#Valores Unicos - Ranl
+Base_Dados ['Setor'].value_counts()
+
+Base_Dados ['Setor'].value_counts(normalize=True)
+
+plt.figure(figsize=(15,6))
+plt.title('Analisando Setores')
+plt.bar( Base_Dados ['Setor'].value_counts().index, Base_Dados ['Setor'].value_counts() )
+plt.xticks( rotation=45, ha='right');
+
+Analise = round (Base_Dados['Pais'].value_counts(normalize=True) * 100, 1)
+
+#plot geral dos países
+plt.figure(figsize=(15,6))
+plt.title('Analise dos Países geradores Unicórnios')
+#Gerar gráfico tipo pizza
+plt.pie(
+    Analise,
+    labels = Analise.index,
+    shadow=True,
+    startangle=90,
+    autopct='%1.1f%%'
+);
+
+#Conversão do tipo object para Data
+Base_Dados['Data de Adesão'] = pd.to_datetime( Base_Dados['Data de Adesão'])
+
+Base_Dados['Data de Adesão'].head()
+
+#plot geral dos países
+plt.figure(figsize=(15,6))
+plt.title('Analise dos Top 10 Países geradores de Unicórnios')
+#Gerar gráfico tipo pizza
+plt.pie(
+    Analise.head(10),
+    labels = Analise.index[0:10],
+    shadow=True,
+    startangle=90,
+    autopct='%1.1f%%'
+);
+
+#Extrair o ano e mês
+Base_Dados['Mes'] = pd.DatetimeIndex(Base_Dados['Data de Adesão']).month
+Base_Dados['Ano'] = pd.DatetimeIndex(Base_Dados['Data de Adesão']).year
+#Mostrar alterações
+Base_Dados.head()
+
+#Criar tabela analítica
+Analise_Agrupada = Base_Dados.groupby( by=['Pais', 'Ano', 'Mes', 'Empresa']).count().reset_index() #Se tiver ID coloca apos o .count para filtrar apenas o pais, ano, mes
+
+Analise_Agrupada
+
+#Encontrar por algum titulo da tabela
+Analise_Agrupada.loc[
+    Analise_Agrupada['Pais'] == 'Brazil'
+]
+
+#Transformando a coluna valor para gerar um gráfico
+#Função lambda (Essa variavel vai ser cada linha da base de dados e dentro dela estou substituindo $ por vazio)
+#pd.to_numeric converte em um num real
+Base_Dados['Valor ($)'] = pd.to_numeric( Base_Dados['Valor ($)'].apply( lambda Linha: Linha.replace('$', '')))
+
+Base_Dados.head()
+
+#Excluir coluna da Data pois está no formato DateTime não permitindo fazer o groupby
+Base_Dados.drop('Data de Adesão', axis = 1, inplace=True)
+
+#Tabela analítica
+Analise_Pais = Base_Dados.groupby( by=['Pais']).sum()['Valor($)'].reset_index()
+
+Analise_Pais.head()
+
+#Ordenando países
+#ascending=False serve para ordenar do maior para o menor
+Analise_Valor = Analise_Pais.sort_values('Valor($)', ascending=False)
+
+Analise_Valor.head()
+
+#Tela gráfica análise do valor por país
+plt.figure(figsize=(15,6))
+plt.title('Análise do valor por país')
+plt.plot( Analise_Valor['Pais'], Analise_Valor['Valor($)'])
+plt.xticks( rotation=45, ha='right');
